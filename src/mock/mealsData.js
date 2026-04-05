@@ -1,0 +1,98 @@
+export const mockMeals = [
+  {
+    id: 1,
+    name: "Roasted Sweet Potato Bowl",
+    label: "Vegetarian",
+    labelColor: "text-primary",
+    calories: 420,
+    protein: 12,
+    carbs: 54,
+    fat: 18,
+    image:
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 2,
+    name: "Lemon Herb Salmon",
+    label: "High Protein",
+    labelColor: "text-primary",
+    calories: 385,
+    protein: 34,
+    carbs: 4,
+    fat: 22,
+    image:
+      "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 3,
+    name: "Tomato Basil Fusilli",
+    label: "Quick Prep",
+    labelColor: "text-orange-600",
+    calories: 510,
+    protein: 14,
+    carbs: 68,
+    fat: 12,
+    image:
+      "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 4,
+    name: "Avocado & Egg Toast",
+    label: "Breakfast",
+    labelColor: "text-primary",
+    calories: 320,
+    protein: 11,
+    carbs: 24,
+    fat: 19,
+    image:
+      "https://images.unsplash.com/photo-1488477181946-6428a0291777?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 5,
+    name: "Protein Chicken Wrap",
+    label: "On the Go",
+    labelColor: "text-primary",
+    calories: 440,
+    protein: 28,
+    carbs: 36,
+    fat: 16,
+    image:
+      "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 6,
+    name: "Classic Caesar Salad",
+    label: "Low Carb",
+    labelColor: "text-green-600",
+    calories: 350,
+    protein: 26,
+    carbs: 12,
+    fat: 22,
+    image:
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 7,
+    name: "Classic Caesar Salad",
+    label: "Low Carb",
+    labelColor: "text-green-600",
+    calories: 350,
+    protein: 26,
+    carbs: 12,
+    fat: 22,
+    image:
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: 3,
+    name: "Tomato Basil Fusilli",
+    label: "Quick Prep",
+    labelColor: "text-orange-600",
+    calories: 510,
+    protein: 14,
+    carbs: 68,
+    fat: 12,
+    image:
+      "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+  },
+];
