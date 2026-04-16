@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ChatMessage from '../components/ChatMessage';
 import { chatApi } from '../api/chat';
+import { mealsApi } from '../api/meals';
 
 export default function Chat() {
   const [messages, setMessages] = useState([
@@ -22,6 +23,79 @@ export default function Chat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  const handleAddToToday = async (msg, e) => {
+    const btn = e.currentTarget;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">refresh</span> Adding...';
+    btn.disabled = true;
+
+    try {
+      await mealsApi.logMeal({
+        mealType: 'Snacks',
+        name: msg.bentoData.name,
+        image: msg.bentoData.image,
+        totalNutrients: msg.bentoData,
+        foods: []
+      });
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Added to Log'; 
+      btn.className = 'bg-primary text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2';
+    } catch (err) {
+      console.error(err);
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+      alert("Failed to log meal. Please try again.");
+    }
+  };
+
+  const handleSaveMeal = async (msg, e) => {
+    const btn = e.currentTarget;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">refresh</span> Saving...';
+    btn.disabled = true;
+
+    try {
+      await mealsApi.saveCustomFood({
+        name: msg.bentoData.name,
+        calories: msg.bentoData.calories,
+        protein: msg.bentoData.protein,
+        carbs: msg.bentoData.carbs,
+        fat: msg.bentoData.fat,
+        servingSize: msg.bentoData.description || '1 serving',
+        image: msg.bentoData.image
+      });
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Saved!'; 
+      btn.className = 'bg-surface-container-highest text-green-700 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2';
+    } catch (err) {
+      console.error(err);
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+      alert("Failed to save meal. Please try again.");
+    }
+  };
+
+  const handleToggleEdit = (id) => {
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, isEditing: !m.isEditing } : m));
+  };
+
+  const handleUpdateBento = (id, field, value) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id === id) {
+        return {
+          ...m,
+          bentoData: {
+            ...m.bentoData,
+            [field]: value === '' ? 0 : Number(value)
+          }
+        };
+      }
+      return m;
+    }));
+  };
+
+  const handleAdjustPortion = (msg) => {
+    handleToggleEdit(msg.id);
+  };
 
   const handleSend = async (shortcutText) => {
     const textToSend = typeof shortcutText === 'string' ? shortcutText : input;
@@ -50,6 +124,13 @@ export default function Chat() {
       }]);
     } catch (error) {
       console.error(error);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        isAi: true,
+        text: "My neural pathways are experiencing a high volume of traffic right now! (Gemini API 503 Error). Please try again in a few moments.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        hasBento: false
+      }]);
     } finally {
       setIsTyping(false);
     }
@@ -89,19 +170,44 @@ export default function Chat() {
                 <>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 mt-4">
                     <div className="bg-surface-container-low p-4 rounded-xl flex flex-col items-center">
-                      <span className="font-headline text-xl font-bold text-primary">{msg.bentoData.calories}</span>
+                      {msg.isEditing ? (
+                        <input type="number" value={msg.bentoData.calories} onChange={e => handleUpdateBento(msg.id, 'calories', e.target.value)} className="w-16 bg-transparent text-center font-headline text-xl font-bold text-primary outline-none border-b border-primary/30" />
+                      ) : (
+                        <span className="font-headline text-xl font-bold text-primary">{msg.bentoData.calories}</span>
+                      )}
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Calories</span>
                     </div>
                     <div className="bg-surface-container-low p-4 rounded-xl flex flex-col items-center">
-                      <span className="font-headline text-xl font-bold text-on-surface">{msg.bentoData.protein}g</span>
+                      <div className="flex items-end gap-0.5">
+                        {msg.isEditing ? (
+                          <input type="number" value={msg.bentoData.protein} onChange={e => handleUpdateBento(msg.id, 'protein', e.target.value)} className="w-12 bg-transparent text-center font-headline text-xl font-bold text-on-surface outline-none border-b border-outline-variant/50" />
+                        ) : (
+                          <span className="font-headline text-xl font-bold text-on-surface">{msg.bentoData.protein}</span>
+                        )}
+                        <span className="font-headline text-lg font-bold text-on-surface">g</span>
+                      </div>
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Protein</span>
                     </div>
                     <div className="bg-surface-container-low p-4 rounded-xl flex flex-col items-center">
-                      <span className="font-headline text-xl font-bold text-on-surface">{msg.bentoData.fat}g</span>
+                      <div className="flex items-end gap-0.5">
+                        {msg.isEditing ? (
+                          <input type="number" value={msg.bentoData.fat} onChange={e => handleUpdateBento(msg.id, 'fat', e.target.value)} className="w-12 bg-transparent text-center font-headline text-xl font-bold text-on-surface outline-none border-b border-outline-variant/50" />
+                        ) : (
+                          <span className="font-headline text-xl font-bold text-on-surface">{msg.bentoData.fat}</span>
+                        )}
+                        <span className="font-headline text-lg font-bold text-on-surface">g</span>
+                      </div>
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fat</span>
                     </div>
                     <div className="bg-surface-container-low p-4 rounded-xl flex flex-col items-center">
-                      <span className="font-headline text-xl font-bold text-on-surface">{msg.bentoData.carbs}g</span>
+                      <div className="flex items-end gap-0.5">
+                        {msg.isEditing ? (
+                          <input type="number" value={msg.bentoData.carbs} onChange={e => handleUpdateBento(msg.id, 'carbs', e.target.value)} className="w-12 bg-transparent text-center font-headline text-xl font-bold text-on-surface outline-none border-b border-outline-variant/50" />
+                        ) : (
+                          <span className="font-headline text-xl font-bold text-on-surface">{msg.bentoData.carbs}</span>
+                        )}
+                        <span className="font-headline text-lg font-bold text-on-surface">g</span>
+                      </div>
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Carbs</span>
                     </div>
                   </div>
@@ -119,22 +225,22 @@ export default function Chat() {
 
                   <div className="flex flex-wrap gap-2">
                     <button 
-                      onClick={(e) => { e.currentTarget.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Added to Log'; e.currentTarget.className = 'bg-primary text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2'; e.currentTarget.disabled = true; }}
+                      onClick={(e) => handleAddToToday(msg, e)}
                       className="bg-primary/5 hover:bg-primary/10 text-primary px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-sm">add</span> Add to Today
                     </button>
                     <button 
-                      onClick={(e) => { e.currentTarget.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Saved!'; e.currentTarget.className = 'bg-surface-container-highest text-green-700 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2'; e.currentTarget.disabled = true; }}
+                      onClick={(e) => handleSaveMeal(msg, e)}
                       className="bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-sm">bookmark</span> Save Meal
                     </button>
                     <button 
-                      onClick={() => alert("Mock Action: This will open a slider overlay allowing you to adjust the weight/ml of the item.")}
-                      className="bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2"
+                      onClick={() => handleAdjustPortion(msg)}
+                      className={`${msg.isEditing ? 'bg-primary text-white' : 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface'} px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2`}
                     >
-                      <span className="material-symbols-outlined text-sm">edit</span> Adjust Portions
+                      <span className="material-symbols-outlined text-sm">{msg.isEditing ? 'check' : 'edit'}</span> {msg.isEditing ? 'Done Editing' : 'Adjust Portions'}
                     </button>
                   </div>
                 </>

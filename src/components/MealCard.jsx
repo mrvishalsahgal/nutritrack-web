@@ -8,9 +8,9 @@ export default function MealCard({ image, name, details, calories }) {
           alt={name} 
         />
       </div>
-      <div className="flex-1">
-        <h4 className="font-bold text-lg">{name}</h4>
-        <p className="text-slate-400 text-sm">{details}</p>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-lg truncate">{name}</h4>
+        <p className="text-slate-400 text-sm truncate">{details}</p>
       </div>
       <div className="text-right">
         <span className="block font-bold text-lg">{calories}</span>

@@ -1,64 +1,36 @@
-import { mockUsers } from '../mock/users';
-
-// Simulate a network delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+import api from '../config/api';
 
 export const authApi = {
-  /**
-   * Logs a user in
-   * @param {Object} credentials { email, password }
-   * @returns {Promise<Object>} The authenticated user object and a mock token
-   */
   async login(credentials) {
-    await delay(800); // Simulate network latency
-
-    const { email, password } = credentials;
-    const user = mockUsers.find(u => u.email === email && u.password === password);
-
-    if (user) {
-      // Exclude password from the response
-      const { password: _, ...userWithoutPassword } = user;
-      return {
-        user: userWithoutPassword,
-        token: 'mock-jwt-token-123456789'
-      };
+    const response = await api.post('/auth/login', credentials);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
     }
-
-    throw new Error('Invalid email or password');
+    return {
+      user: response.data,
+      token: response.data.token
+    };
   },
 
-  /**
-   * Signs a user up
-   * @param {Object} userData { email, password, goal }
-   * @returns {Promise<Object>} The authenticated user object and a mock token
-   */
   async signup(userData) {
-    await delay(1000); // Simulate network latency
-
-    const { email, password, goal } = userData;
-    const existingUser = mockUsers.find(u => u.email === email);
-
-    if (existingUser) {
-      throw new Error('Email is already in use');
+    // Map 'goal' from frontend UI to nested 'goals' object expected by backend, generic mapped for now
+    const payload = {
+      name: userData.email.split('@')[0], // Extract basic name
+      email: userData.email,
+      password: userData.password
+    };
+    
+    const response = await api.post('/auth/register', payload);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
     }
-
-    const newUser = {
-      id: `u${mockUsers.length + 1}`,
-      name: email.split('@')[0],
-      email,
-      password,
-      goal,
-      avatar: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
-    };
-
-    // In a real app we would not mutate a static mock array like this,
-    // but it serves the purpose for client-side state mocking within one session
-    mockUsers.push(newUser);
-
-    const { password: _, ...userWithoutPassword } = newUser;
     return {
-      user: userWithoutPassword,
-      token: 'mock-jwt-token-123456789'
+      user: response.data,
+      token: response.data.token
     };
+  },
+
+  logout() {
+    localStorage.removeItem('token');
   }
 };

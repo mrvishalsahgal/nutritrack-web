@@ -1,27 +1,23 @@
-import { mockMeals } from '../mock/mealsData';
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+import api from '../config/api';
 
 export const mealsApi = {
-  /**
-   * Retrieves a list of saved meals
-   */
   async getSavedMeals() {
-    await delay(800); // Simulate network latency
-    return [...mockMeals]; // Return copy
+    const response = await api.get('/meals');
+    return response.data;
   },
 
-  /**
-   * Search through meals by name or label
-   * @param {string} query Search term 
-   */
   async searchMeals(query) {
-    await delay(400); // faster latency for typing search
-    const lowerQuery = query.toLowerCase();
-    
-    return mockMeals.filter(meal => 
-      meal.name.toLowerCase().includes(lowerQuery) || 
-      meal.label.toLowerCase().includes(lowerQuery)
-    );
+    const response = await api.get('/foods/search', { params: { query } });
+    return response.data;
+  },
+  
+  async logMeal(mealData) {
+    const response = await api.post('/meals', mealData);
+    return response.data;
+  },
+  
+  async saveCustomFood(foodData) {
+    const response = await api.post('/foods', foodData);
+    return response.data;
   }
 };
