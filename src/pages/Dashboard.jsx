@@ -1,17 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MealCard from "../components/MealCard";
 import { dashboardApi } from "../api/dashboard";
+import CustomDatePicker from "../components/CustomDatePicker";
 
 export default function Dashboard() {
-  const [selectedDate, setSelectedDate] = useState("October 24, 2023");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const calendarRef = useRef(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Close calendar when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setShowCalendar(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const formatDateToYYYYMMDD = (date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     const fetchDashboard = async () => {
       setLoading(true);
       try {
-        const result = await dashboardApi.getDashboardSummary(selectedDate);
+        const dateStr = formatDateToYYYYMMDD(selectedDate);
+        const result = await dashboardApi.getDashboardSummary(dateStr);
         setData(result);
       } catch (error) {
         console.error("Error fetching dashboard", error);
@@ -22,8 +42,22 @@ export default function Dashboard() {
     fetchDashboard();
   }, [selectedDate]);
 
-  const handlePrevDay = () => setSelectedDate("October 23, 2023");
-  const handleNextDay = () => setSelectedDate("October 24, 2023");
+  const handlePrevDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() - 1);
+    setSelectedDate(newDate);
+  };
+
+  const handleNextDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + 1);
+    setSelectedDate(newDate);
+  };
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setShowCalendar(false);
+  };
 
   if (loading || !data) {
     return (
@@ -39,6 +73,14 @@ export default function Dashboard() {
   const strokeDashoffset =
     circleCircumference - (summary.goalProgress / 100) * circleCircumference;
 
+  const formattedDateDisplay = selectedDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const isToday = new Date().toDateString() === selectedDate.toDateString();
+
   return (
     <>
       {/* Header Section */}
@@ -48,23 +90,47 @@ export default function Dashboard() {
             Your Daily Intake
           </h2>
           <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface tracking-tight">
-            Today&apos;s Summary
+            {isToday ? "Today's Summary" : "Daily Summary"}
           </h1>
         </div>
-        <div className="flex items-center bg-surface-container-low rounded-full p-1.5 self-start">
-          <button
-            onClick={handlePrevDay}
-            className="p-2 hover:bg-white rounded-full transition-colors flex items-center justify-center"
-          >
-            <span className="material-symbols-outlined">chevron_left</span>
-          </button>
-          <span className="px-4 font-semibold text-sm">{selectedDate}</span>
-          <button
-            onClick={handleNextDay}
-            className="p-2 hover:bg-white rounded-full transition-colors flex items-center justify-center"
-          >
-            <span className="material-symbols-outlined">chevron_right</span>
-          </button>
+        <div className="relative" ref={calendarRef}>
+          <div className="flex items-center bg-surface-container-low rounded-full p-1.5 self-start shadow-sm border border-outline-variant/10">
+            <button
+              onClick={handlePrevDay}
+              className="p-2 hover:bg-surface-container-highest rounded-full transition-colors flex items-center justify-center text-on-surface-variant"
+              title="Previous Day"
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            
+            <button 
+              className="flex items-center px-3 py-1.5 cursor-pointer hover:bg-surface-container-highest rounded-full transition-all group"
+              onClick={() => setShowCalendar(!showCalendar)}
+            >
+              <span className="font-bold text-sm text-on-surface transition-colors">
+                {formattedDateDisplay}
+              </span>
+              <span className="material-symbols-outlined ml-2 text-primary text-[20px] transition-transform duration-300" style={{ transform: showCalendar ? 'rotate(180)deg' : 'none' }}>
+                {showCalendar ? 'calendar_month' : 'event'}
+              </span>
+            </button>
+
+            <button
+              onClick={handleNextDay}
+              className="p-2 hover:bg-surface-container-highest rounded-full transition-colors flex items-center justify-center text-on-surface-variant"
+              title="Next Day"
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+
+          {showCalendar && (
+            <CustomDatePicker 
+              selectedDate={selectedDate} 
+              onChange={handleDateChange}
+              onClose={() => setShowCalendar(false)}
+            />
+          )}
         </div>
       </div>
 
@@ -129,11 +195,12 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="bg-surface-container rounded-2xl p-4 text-center">
-                <span className="block text-xl font-bold text-primary">
-                  +{summary.exercise.toLocaleString()}
+                <span className="block text-xl font-bold text-blue-500">
+                  1,850
+                  <span className="text-xs ml-1 font-medium italic">ml</span>
                 </span>
                 <span className="text-[10px] text-slate-400 uppercase font-semibold">
-                  Exercise
+                  Water
                 </span>
               </div>
               <div className="bg-surface-container rounded-2xl p-4 text-center">
@@ -217,16 +284,25 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {meals.map((meal) => {
-              console.log("DASHBOARD MEAL RENDER:", data);
+            {meals.slice(0, 6).map((meal) => {
+              const foodNames = meal.foods && meal.foods.length > 0 
+                ? meal.foods.map(f => f.food?.name).filter(Boolean).join(", ") 
+                : "";
+
+              // Priority: Real name -> food names -> description -> meal type fallback
+              const genericTypes = ["Breakfast", "Lunch", "Dinner", "Snacks", "Meal", "Logged Meal", "Untitled Meal"];
+              const hasGenericName = !meal.name || genericTypes.includes(meal.name);
+              const mealName = hasGenericName ? (foodNames || meal.description || meal.name || meal.mealType || "Healthy Meal") : meal.name;
+                  
               return (
                 <MealCard
                   key={meal._id || Math.random()}
-                  name={meal.name || meal.mealType || "Logged Meal"}
+                  name={mealName}
                   details={`${meal.mealType || "Meal"} • ${new Date(meal.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                   calories={meal.totalNutrients?.calories || 0}
                   image={
                     meal.image ||
+                    (meal.foods && meal.foods[0]?.food?.image) ||
                     "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80"
                   }
                 />

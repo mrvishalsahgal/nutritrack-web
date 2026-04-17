@@ -5,6 +5,7 @@ export const dashboardApi = {
     try {
       const response = await api.get('/analytics/trends', { params: { range: 'daily', date } });
       const logs = response.data.data || [];
+      const userGoals = response.data.goals || { calories: 2000, protein: 150, carbs: 250, fat: 60 };
       
       let calories = 0, protein = 0, carbs = 0, fats = 0;
       
@@ -17,26 +18,30 @@ export const dashboardApi = {
         }
       });
 
+      const baseGoal = userGoals.calories;
+
       return {
         summary: {
-          caloriesLeft: Math.max(2200 - calories, 0),
-          baseGoal: 2200,
+          caloriesLeft: Math.max(baseGoal - calories, 0),
+          baseGoal: baseGoal,
           exercise: 0,
           food: calories,
-          goalProgress: Math.min(Math.floor((calories / 2200) * 100), 100),
-          recommendation: "Keep logging your meals to track your progress!"
+          goalProgress: Math.min(Math.floor((calories / baseGoal) * 100), 100),
+          recommendation: calories > baseGoal ? "You've exceeded your daily target." : "Keep logging your meals to track your progress!"
         },
         macros: {
-          carbs: { consumed: carbs, target: 220, percentage: Math.min(Math.floor((carbs/220)*100), 100) },
-          protein: { consumed: protein, target: 150, percentage: Math.min(Math.floor((protein/150)*100), 100) },
-          fats: { consumed: fats, target: 70, percentage: Math.min(Math.floor((fats/70)*100), 100) }
+          carbs: { consumed: carbs, target: userGoals.carbs, percentage: Math.min(Math.floor((carbs/userGoals.carbs)*100), 100) },
+          protein: { consumed: protein, target: userGoals.protein, percentage: Math.min(Math.floor((protein/userGoals.protein)*100), 100) },
+          fats: { consumed: fats, target: userGoals.fat, percentage: Math.min(Math.floor((fats/userGoals.fat)*100), 100) }
         },
         meals: logs
       };
     } catch (err) {
+      console.error(err);
+      const fallbackGoal = 2000;
       return {
-        summary: { caloriesLeft: 2200, baseGoal: 2200, exercise: 0, food: 0, goalProgress: 0, recommendation: "Error connecting to backend" },
-        macros: { carbs: { consumed: 0, target: 220, percentage: 0 }, protein: { consumed: 0, target: 150, percentage: 0 }, fats: { consumed: 0, target: 70, percentage: 0 } },
+        summary: { caloriesLeft: fallbackGoal, baseGoal: fallbackGoal, exercise: 0, food: 0, goalProgress: 0, recommendation: "Error connecting to backend" },
+        macros: { carbs: { consumed: 0, target: 250, percentage: 0 }, protein: { consumed: 0, target: 150, percentage: 0 }, fats: { consumed: 0, target: 60, percentage: 0 } },
         meals: []
       };
     }

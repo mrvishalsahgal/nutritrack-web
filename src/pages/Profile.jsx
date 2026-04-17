@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileApi } from '../api/profile';
+import { toast } from '../utils/toast';
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  const [tempGoal, setTempGoal] = useState("");
+  const [tempName, setTempName] = useState("");
+  const [tempBio, setTempBio] = useState("");
+  const [tempAvatar, setTempAvatar] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -13,7 +22,13 @@ export default function Profile() {
       setLoading(true);
       try {
         const data = await profileApi.getProfile();
-        if (isMounted) setProfile(data);
+        if (isMounted) {
+          setProfile(data);
+          setTempGoal(data.dailyGoal.toString());
+          setTempName(data.name);
+          setTempBio(data.description);
+          setTempAvatar(data.avatar);
+        }
       } catch (err) {
         console.error("Error fetching profile", err);
       } finally {
@@ -25,18 +40,98 @@ export default function Profile() {
   }, []);
 
   const handleTogglePreference = async (key) => {
+    const newValue = !profile.preferences[key];
     // Optimistic UI toggle
     setProfile(prev => ({
       ...prev,
-      preferences: {
-        ...prev.preferences,
-        [key]: !prev.preferences[key]
-      }
+      preferences: { ...prev.preferences, [key]: newValue }
     }));
     try {
-      await profileApi.togglePreference(key);
+      await profileApi.togglePreference(key, newValue);
+      toast(`${key.replace(/([A-Z])/g, ' $1')} updated!`);
     } catch (err) {
       console.error(err);
+      toast("Failed to update preference", "error");
+    }
+  };
+
+  const handleUpdateAvatar = () => {
+    setTempAvatar(profile.avatar);
+    setIsEditingAvatar(true);
+  };
+
+  const handleAvatarSubmit = async () => {
+    if (!tempAvatar || tempAvatar === profile.avatar) {
+      setIsEditingAvatar(false);
+      return;
+    }
+
+    try {
+      await profileApi.updateProfile({ avatar: tempAvatar });
+      setProfile(prev => ({ ...prev, avatar: tempAvatar }));
+      setIsEditingAvatar(false);
+      toast("Profile picture updated!");
+    } catch (err) {
+      toast("Failed to update avatar", "error");
+      setIsEditingAvatar(false);
+    }
+  };
+
+  const handleUpdateGoal = () => {
+    setTempGoal(profile.dailyGoal.toString());
+    setIsEditingGoal(true);
+  };
+
+  const handleGoalSubmit = async () => {
+    if (!tempGoal || isNaN(tempGoal) || Number(tempGoal) === profile.dailyGoal) {
+      setIsEditingGoal(false);
+      return;
+    }
+
+    try {
+      await profileApi.updateProfile({ goals: { calories: Number(tempGoal) } });
+      setProfile(prev => ({ ...prev, dailyGoal: Number(tempGoal) }));
+      setIsEditingGoal(false);
+      toast("Daily goal updated!");
+    } catch (err) {
+      toast("Failed to update goal", "error");
+      setIsEditingGoal(false);
+    }
+  };
+
+  const handleUpdateInfo = (field) => {
+    if (field === 'name') {
+      setTempName(profile.name);
+      setIsEditingName(true);
+    } else {
+      setTempBio(profile.description);
+      setIsEditingBio(true);
+    }
+  };
+
+  const handleInfoSubmit = async (field) => {
+    const isName = field === 'name';
+    const currentValue = isName ? profile.name : profile.description;
+    const newValue = isName ? tempName : tempBio;
+    const setter = isName ? setIsEditingName : setIsEditingBio;
+
+    if (!newValue || newValue === currentValue) {
+      setter(false);
+      return;
+    }
+
+    try {
+      const updates = isName ? { name: newValue } : { bio: newValue };
+      await profileApi.updateProfile(updates);
+      setProfile(prev => ({ 
+        ...prev, 
+        [isName ? 'name' : 'description']: newValue 
+      }));
+      setter(false);
+      toast(`${isName ? 'Name' : 'Bio'} updated!`);
+    } catch (err) {
+      toast(`Failed to update ${isName ? 'Name' : 'Bio'}`, "error");
+      setter(false);
     }
   };
 
@@ -59,22 +154,83 @@ export default function Profile() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <span className="text-[0.75rem] font-medium tracking-[0.02em] uppercase text-primary mb-2 block">Account Dashboard</span>
-            <h1 className="text-[3.5rem] font-bold font-headline leading-[1.1] tracking-[-0.04em] text-on-surface">{profile.name}</h1>
-            <p className="text-on-surface-variant font-body mt-2 max-w-md">
-              {profile.description}
-            </p>
+            {isEditingName ? (
+              <input 
+                autoFocus
+                className="text-[3.5rem] font-bold font-headline leading-[1.1] tracking-[-0.04em] text-on-surface bg-surface-container-high rounded-2xl w-full outline-none px-4 mb-2 focus:ring-4 focus:ring-primary/20 transition-all border-none"
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                onBlur={() => handleInfoSubmit('name')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleInfoSubmit('name');
+                  if (e.key === 'Escape') setIsEditingName(false);
+                }}
+              />
+            ) : (
+              <h1 
+                onClick={() => handleUpdateInfo('name')}
+                className="text-[3.5rem] font-bold font-headline leading-[1.1] tracking-[-0.04em] text-on-surface cursor-pointer hover:text-primary transition-colors"
+              >
+                {profile.name}
+              </h1>
+            )}
+
+            {isEditingBio ? (
+              <textarea 
+                autoFocus
+                className="text-on-surface-variant font-body mt-2 w-full bg-surface-container-high rounded-2xl outline-none px-4 py-2 focus:ring-4 focus:ring-primary/20 transition-all border-none resize-none h-24"
+                value={tempBio}
+                onChange={(e) => setTempBio(e.target.value)}
+                onBlur={() => handleInfoSubmit('bio')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) handleInfoSubmit('bio');
+                  if (e.key === 'Escape') setIsEditingBio(false);
+                }}
+              />
+            ) : (
+              <p 
+                onClick={() => handleUpdateInfo('bio')}
+                className="text-on-surface-variant font-body mt-2 max-w-md cursor-pointer hover:text-primary transition-colors"
+              >
+                {profile.description}
+              </p>
+            )}
           </div>
           <div className="relative group self-start md:self-auto">
-            <div className="w-32 h-32 rounded-[2rem] overflow-hidden bg-surface-container-high shadow-xl ring-4 ring-surface">
+            <div className="w-32 h-32 rounded-[2rem] overflow-hidden bg-surface-container-high shadow-xl ring-4 ring-surface relative">
               <img 
                 alt="User Profile" 
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                 src={profile.avatar}
               />
             </div>
-            <button className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all flex items-center justify-center">
+            <button 
+              onClick={handleUpdateAvatar}
+              className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all flex items-center justify-center z-10"
+            >
               <span className="material-symbols-outlined text-sm">edit</span>
             </button>
+
+            {isEditingAvatar && (
+              <div className="absolute top-full right-0 mt-4 w-64 bg-white/80 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-white/20 z-[60] animate-in zoom-in-95 fade-in duration-300">
+                <p className="text-[10px] font-bold uppercase text-slate-400 mb-2 ml-1 tracking-wider">Image URL</p>
+                <input 
+                  autoFocus
+                  placeholder="https://..."
+                  className="w-full px-4 py-2 bg-white border border-outline-variant/30 rounded-xl text-xs outline-none focus:ring-4 focus:ring-primary/10 transition-all mb-2"
+                  value={tempAvatar}
+                  onChange={(e) => setTempAvatar(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAvatarSubmit();
+                    if (e.key === 'Escape') setIsEditingAvatar(false);
+                  }}
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleAvatarSubmit} className="flex-1 py-2 bg-primary text-white text-[10px] font-bold uppercase rounded-lg">Save</button>
+                  <button onClick={() => setIsEditingAvatar(false)} className="px-3 py-2 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase rounded-lg">Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -92,7 +248,24 @@ export default function Profile() {
               <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold font-label uppercase tracking-wider">Active Goal</span>
             </div>
             <div className="flex items-baseline gap-4 mb-8">
-              <span className="text-[4rem] font-bold font-headline tracking-tighter text-on-surface">{profile.dailyGoal.toLocaleString()}</span>
+              {isEditingGoal ? (
+                <input 
+                  autoFocus
+                  type="number"
+                  className="text-[4rem] font-bold font-headline tracking-tighter text-on-surface bg-surface-container-high rounded-2xl w-full max-w-[15rem] outline-none px-4 focus:ring-4 focus:ring-primary/20 transition-all border-none"
+                  value={tempGoal}
+                  onChange={(e) => setTempGoal(e.target.value)}
+                  onBlur={handleGoalSubmit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleGoalSubmit();
+                    if (e.key === 'Escape') setIsEditingGoal(false);
+                  }}
+                />
+              ) : (
+                <span className="text-[4rem] font-bold font-headline tracking-tighter text-on-surface">
+                  {profile.dailyGoal.toLocaleString()}
+                </span>
+              )}
               <span className="text-xl font-medium font-label text-on-surface-variant uppercase tracking-widest">Kcal</span>
             </div>
             
@@ -101,7 +274,12 @@ export default function Profile() {
             </div>
             
             <div className="flex gap-4">
-              <button className="px-6 py-2 rounded-full border border-outline-variant/30 text-sm font-semibold font-body hover:bg-surface-container-low transition-colors">Adjust Goal</button>
+              <button 
+                onClick={handleUpdateGoal}
+                className="px-6 py-2 rounded-full border border-outline-variant/30 text-sm font-semibold font-body hover:bg-surface-container-low transition-colors"
+              >
+                Adjust Goal
+              </button>
               <button className="px-6 py-2 rounded-full bg-primary text-white text-sm font-semibold font-body hover:shadow-lg hover:scale-[1.02] transition-all">Quick Log</button>
             </div>
           </div>

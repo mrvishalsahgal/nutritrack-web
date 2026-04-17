@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import Toast from '../components/Toast';
 import { profileApi } from '../api/profile';
 
 export default function DashboardLayout() {
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     profileApi.getProfile().then(data => setProfile(data));
   }, []);
+
+  const isChatPage = location.pathname === '/chat';
+
   return (
     <div className="bg-surface font-body text-on-surface antialiased flex min-h-screen">
       <Sidebar />
@@ -54,10 +59,16 @@ export default function DashboardLayout() {
         </div>
       </main>
 
-      {/* Floating Action Button */}
-      <button className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-16 h-16 bg-gradient-to-tr from-primary to-primary-container text-white rounded-full flex items-center justify-center shadow-2xl shadow-green-500/40 hover:scale-110 active:scale-95 transition-all z-50">
-        <span className="material-symbols-outlined text-3xl">add</span>
-      </button>
+      {/* Floating Action Button - Hidden on Chat Page */}
+      {!isChatPage && (
+        <button 
+          onClick={() => navigate('/chat')}
+          className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-16 h-16 bg-gradient-to-tr from-primary to-primary-container text-white rounded-full flex items-center justify-center shadow-2xl shadow-green-500/40 hover:scale-110 active:scale-95 transition-all z-50 animate-in fade-in zoom-in duration-500"
+        >
+          <span className="material-symbols-outlined text-3xl">add</span>
+        </button>
+      )}
+      <Toast />
     </div>
   );
 }
