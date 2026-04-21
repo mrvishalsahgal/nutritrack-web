@@ -13,9 +13,8 @@ export const authApi = {
   },
 
   async signup(userData) {
-    // Map 'goal' from frontend UI to nested 'goals' object expected by backend, generic mapped for now
     const payload = {
-      name: userData.email.split('@')[0], // Extract basic name
+      name: userData.name,
       email: userData.email,
       password: userData.password
     };

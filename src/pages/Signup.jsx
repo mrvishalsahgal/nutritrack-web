@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth';
 
 export default function Signup() {
-  const [goal, setGoal] = useState('lose_weight');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,14 +14,14 @@ export default function Signup() {
     e.preventDefault();
     setError('');
     
-    if (!email || !password) {
+    if (!name || !email || !password) {
       setError('Please fill all fields');
       return;
     }
 
     setLoading(true);
     try {
-      const { user, token } = await authApi.signup({ email, password, goal });
+      const { user, token } = await authApi.signup({ name, email, password });
       console.log('Signed up successfully:', user, token);
       navigate('/dashboard');
     } catch (err) {
@@ -62,54 +62,18 @@ export default function Signup() {
           </div>
           
           <form className="space-y-8" onSubmit={handleSignup}>
-            {/* Goal Selection (Pill Style) */}
-            <div className="space-y-4">
-              <span className="font-label text-xs font-semibold tracking-wider text-secondary uppercase">Select your goal</span>
-              <div className="grid grid-cols-1 gap-3">
-                <button 
-                  onClick={() => setGoal('lose_weight')}
-                  className="group flex items-center justify-between px-5 py-4 bg-surface-container-low hover:bg-surface-container-high rounded-lg transition-all border border-transparent hover:border-outline-variant/20" 
-                  type="button"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">trending_down</span>
-                    <span className="text-on-surface font-medium">Lose Weight</span>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${goal === 'lose_weight' ? 'border-primary' : 'border-outline-variant'}`}>
-                    <div className={`w-2.5 h-2.5 bg-primary rounded-full opacity-0 ${goal === 'lose_weight' ? 'opacity-100' : ''}`}></div>
-                  </div>
-                </button>
-                <button 
-                  onClick={() => setGoal('gain_muscle')}
-                  className="group flex items-center justify-between px-5 py-4 bg-surface-container-low hover:bg-surface-container-high rounded-lg transition-all border border-transparent hover:border-outline-variant/20" 
-                  type="button"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">fitness_center</span>
-                    <span className="text-on-surface font-medium">Gain Muscle</span>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${goal === 'gain_muscle' ? 'border-primary' : 'border-outline-variant'}`}>
-                    <div className={`w-2.5 h-2.5 bg-primary rounded-full opacity-0 ${goal === 'gain_muscle' ? 'opacity-100' : ''}`}></div>
-                  </div>
-                </button>
-                <button 
-                  onClick={() => setGoal('maintenance')}
-                  className="group flex items-center justify-between px-5 py-4 bg-surface-container-low hover:bg-surface-container-high rounded-lg transition-all border border-transparent hover:border-outline-variant/20" 
-                  type="button"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">balance</span>
-                    <span className="text-on-surface font-medium">Maintenance</span>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${goal === 'maintenance' ? 'border-primary' : 'border-outline-variant'}`}>
-                    <div className={`w-2.5 h-2.5 bg-primary rounded-full opacity-0 ${goal === 'maintenance' ? 'opacity-100' : ''}`}></div>
-                  </div>
-                </button>
-              </div>
-            </div>
-            
             {/* Input Fields */}
-            <div className="space-y-8 mt-6">
+            <div className="space-y-8">
+              <div className="group relative">
+                <label className="absolute left-4 -top-2.5 bg-surface-container-lowest px-2 text-[10px] font-bold tracking-widest text-secondary uppercase transition-colors group-focus-within:text-primary">Full Name</label>
+                <input 
+                  className="w-full px-5 py-4 bg-surface-container-low rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] outline-none" 
+                  placeholder="John Doe" 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
               <div className="group relative">
                 <label className="absolute left-4 -top-2.5 bg-surface-container-lowest px-2 text-[10px] font-bold tracking-widest text-secondary uppercase transition-colors group-focus-within:text-primary">Email Address</label>
                 <input 

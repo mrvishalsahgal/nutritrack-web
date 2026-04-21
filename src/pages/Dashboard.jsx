@@ -32,9 +32,15 @@ export default function Dashboard() {
       try {
         const dateStr = formatDateToYYYYMMDD(selectedDate);
         const result = await dashboardApi.getDashboardSummary(dateStr);
-        setData(result);
+        if (result && Array.isArray(result.meals)) {
+          setData(result);
+        } else {
+          console.error("Dashboard API returned unexpected data structure:", result);
+          setData(null);
+        }
       } catch (error) {
         console.error("Error fetching dashboard", error);
+        setData(null);
       } finally {
         setLoading(false);
       }

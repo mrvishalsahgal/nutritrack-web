@@ -23,9 +23,10 @@ export default function Meals() {
     setLoading(true);
     try {
       const data = await mealsApi.searchMeals(searchQuery);
-      setMeals(data);
+      setMeals(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching meals:", err);
+      setMeals([]);
     } finally {
       setLoading(false);
     }
