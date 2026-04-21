@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import MealCard from "../components/MealCard";
 import { dashboardApi } from "../api/dashboard";
 import CustomDatePicker from "../components/CustomDatePicker";
+import { DashboardShimmer } from "../components/Shimmer";
 
 export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -66,11 +67,7 @@ export default function Dashboard() {
   };
 
   if (loading || !data) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <DashboardShimmer />;
   }
 
   const { summary, macros, meals } = data;

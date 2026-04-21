@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import SavedMealCard from "../components/SavedMealCard";
 import { mealsApi } from "../api/meals";
 import { toast } from "../utils/toast";
+import { MealCardShimmer } from "../components/Shimmer";
 
 export default function Meals() {
   const [meals, setMeals] = useState([]);
@@ -108,8 +109,8 @@ export default function Meals() {
         </div>
 
         {loading ? (
-          Array(3).fill(0).map((_, i) => (
-            <div key={i} className="bg-slate-100 rounded-[2rem] min-h-[400px] animate-pulse"></div>
+          Array(4).fill(0).map((_, i) => (
+            <MealCardShimmer key={i} />
           ))
         ) : (
           meals.map((meal) => (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileApi } from '../api/profile';
 import { toast } from '../utils/toast';
+import { ProfileShimmer } from '../components/Shimmer';
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
@@ -140,11 +141,7 @@ export default function Profile() {
   };
 
   if (loading || !profile) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <ProfileShimmer />;
   }
 
   return (
